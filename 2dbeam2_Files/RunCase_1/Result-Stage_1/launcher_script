@@ -1,0 +1,2 @@
+#!/bin/bash
+/home/caelinux/../../opt/SalomeMeca/appli_V2017.0.2/salome shell -- as_run export

@@ -1,0 +1,51 @@
+DEBUT()
+
+
+mesh = LIRE_MAILLAGE(UNITE=20)
+
+mesh = MODI_MAILLAGE(
+    reuse=mesh, MAILLAGE=mesh, ORIE_PEAU_3D=_F(GROUP_MA=('top', ))
+)
+
+model = AFFE_MODELE(
+    AFFE=_F(MODELISATION=('DKT', ), PHENOMENE='MECANIQUE', TOUT='OUI'),
+    MAILLAGE=mesh
+)
+
+elemprop = AFFE_CARA_ELEM(
+    COQUE=(
+        _F(EPAIS=8.0, GROUP_MA=('top', 'bottom')),
+        _F(EPAIS=5.0, GROUP_MA=('flange', ), VECTEUR=(0.0, 0.0, 1.0))
+    ),
+    MODELE=model
+)
+
+STEEL = DEFI_MATERIAU(ELAS=_F(E=200000.0, NU=0.3))
+
+fieldmat = AFFE_MATERIAU(AFFE=_F(MATER=(STEEL, ), TOUT='OUI'), MODELE=model)
+
+bc = AFFE_CHAR_MECA(
+    DDL_IMPO=_F(DRX=0.0, DRY=0.0, DX=0.0, DY=0.0, DZ=0.0, GROUP_NO=('node0', )),
+    LIAISON_UNIF=_F(DDL=('DX', 'DY', 'DZ'), GROUP_NO=('end1', )),
+    MODELE=model
+)
+
+load0 = AFFE_CHAR_MECA(MODELE=model, PRES_REP=_F(GROUP_MA=('top', ), PRES=0.1))
+
+reslin = MECA_STATIQUE(
+    CARA_ELEM=elemprop,
+    CHAM_MATER=fieldmat,
+    EXCIT=(_F(CHARGE=load0), _F(CHARGE=bc)),
+    MODELE=model
+)
+
+reslin = CALC_CHAMP(
+    reuse=reslin,
+    CONTRAINTE=('SIGM_ELGA', 'SIEF_ELNO'),
+    CRITERES=('SIEQ_ELGA', 'SIEQ_ELNO'),
+    RESULTAT=reslin
+)
+
+IMPR_RESU(RESU=_F(RESULTAT=reslin), UNITE=80)
+
+FIN()
